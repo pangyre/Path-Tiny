@@ -766,18 +766,24 @@ Copies the current path to the given destination using L<File::Copy>'s
 C<copy> function. Upon success, returns the C<Path::Tiny> object for the
 newly copied file.
 
-Current API available since 0.070.
+The destination will be normalized as if you had called C<path> on it.
+
+Current API available since 0.070.  Normalization since 0.105.
 
 =cut
 
 # XXX do recursively for directories?
 sub copy {
-    my ( $self, $dest ) = @_;
+    my $self = shift;
+    Carp::croak("copy() requires a defined, positive-length argument")
+      unless defined $_[0];
+    my $dest = path(shift);
+
     require File::Copy;
-    File::Copy::copy( $self->[PATH], $dest )
+    File::Copy::copy( $self->[PATH], $dest->[PATH] )
       or Carp::croak("copy failed for $self to $dest: $!");
 
-    return -d $dest ? path( $dest, $self->basename ) : path($dest);
+    return -d $dest ? $dest->child( $self->basename ) : $dest;
 }
 
 =method digest
@@ -1344,15 +1350,20 @@ Move the current path to the given destination path using Perl's
 built-in L<rename|perlfunc/rename> function. Returns the result
 of the C<rename> function.
 
-Current API available since 0.001.
+The destination will be normalized as if you had called C<path> on it.
+
+Current API available since 0.001.  Normalization since 0.105.
 
 =cut
 
 sub move {
-    my ( $self, $dst ) = @_;
+    my $self = shift;
+    Carp::croak("copy() requires a defined, positive-length argument")
+      unless defined $_[0];
+    my $dest = path(shift);
 
-    return rename( $self->[PATH], $dst )
-      || $self->_throw( 'rename', $self->[PATH] . "' -> '$dst" );
+    return rename( $self->[PATH], $dest->[PATH] )
+      || $self->_throw( 'rename', $self->[PATH] . "' -> '$dest" );
 }
 
 =method openr, openw, openrw, opena
